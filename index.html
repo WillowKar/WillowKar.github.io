@@ -41,7 +41,7 @@
         .cursor {
             width: 10px;
             height: 10px;
-            background-color: var(--primary-color);
+            background-color:(#8B0000);
             border-radius: 50%;
             position: fixed;
             top: 0;
@@ -55,7 +55,7 @@
         .cursor-follower {
             width: 20px;
             height: 20px;
-            border: 2px solid var(--primary-color);
+            border: 2px solid var(#8B0000);
             border-radius: 50%;
             position: fixed;
             top: 0;
@@ -70,16 +70,16 @@
         header {
             position: fixed;
             top: 0;
-            left: 50%;
-            transform: translateX(-50%)
+            left: 80%;
             width: 80%;
             padding: 1rem 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            align: center;
             z-index: 1000;
             background: rgba(255, 248, 225, 0.3);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10);
             box-shadow: var(--shadow);
             transition: var(--transition);
         }
@@ -983,7 +983,9 @@
 
     <!-- Hero Section -->
     <section class="hero" id="home">
-        <div class="profile-icon">
+        <div class="image-container">
+  <img src="photo.png">
+</div>
             <i class="fas fa-paint-brush"></i>
         </div>
         <h1>KARMASH</h1>
