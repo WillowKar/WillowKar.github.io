@@ -30,8 +30,8 @@
 
 export const artProjects = [
   {
-    slug: 'art-01',
-    title: '',
+    slug: 'inktober',
+    title: 'ИНКТОБЕР 2026',
     image: '',            // ← путь к картинке
     gallery: [],
     imageAlt: '',
