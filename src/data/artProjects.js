@@ -35,8 +35,8 @@ export const artProjects = [
     image: '',            // ← путь к картинке
     gallery: [],
     imageAlt: '',
-    category: '',
-    year: '',
+    category: 'графика',
+    year: '2026',
     description: '',      // ← текст о работе
     tools: [],
     format: 'portrait',
