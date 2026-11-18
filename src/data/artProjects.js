@@ -32,7 +32,7 @@ export const artProjects = [
   {
     slug: 'inktober',
     title: 'ИНКТОБЕР 2026',
-    image: '',            // ← путь к картинке
+    image: '1',            // ← путь к картинке
     gallery: [],
     imageAlt: '',
     category: 'графика',
