@@ -163,7 +163,7 @@ ul { padding: 0; list-style: none; }
 html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; }
 .cursor-mate {
   position: fixed; left: 0; top: 0; z-index: 600; pointer-events: none;
-  width: 0; height: 0; opacity: 0; transition: opacity .2s;
+  width: 0; height: 0; opacity: 0; transition: opacity .12s;
 }
 .cursor-mate svg {                                   /* центр звёздочки = точка курсора */
   position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; color: var(--ink);
@@ -171,10 +171,14 @@ html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; }
 }
 .cursor-mate.is-live { opacity: 1; }
 .cursor-mate.is-hot svg { color: var(--orange); transform: scale(1.48) rotate(45deg); }
+.cursor-mate.is-pressed svg { color: var(--emerald-600); transform: scale(1.12) rotate(-18deg); }
+.cursor-mate.is-hot.is-pressed svg { color: var(--emerald-600); transform: scale(1.3) rotate(-18deg); }
 .cursor-mate svg { transition: transform .28s cubic-bezier(.2,.8,.2,1), color .22s ease; filter: drop-shadow(0 2px 5px rgba(25,35,30,.16)); }
 @media (any-hover: hover) and (any-pointer: fine) { html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; } }
 .cursor-mate.is-light svg { color: var(--white); }
 .cursor-mate.is-light.is-hot svg { color: var(--orange); }
+.cursor-mate.is-light.is-pressed svg,
+.cursor-mate.is-light.is-hot.is-pressed svg { color: var(--emerald-300); }
 
 /* ---------- прелоадер: «скан проявляет лист» ---------- */
 .preloader {

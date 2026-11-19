@@ -42,30 +42,45 @@ export const initReveal = (root = document) => observeIn(root.querySelectorAll('
 
 /* ---------- 3. Курсор: звёздочка полностью заменяет системную стрелку ---------- */
 export function initCursor() {
-  // any-pointer учитывает гибридные ноутбуки: тачскрин не должен отключать мышь.
+  // any-pointer учитывает мышь на гибридных ноутбуках с сенсорным экраном.
   if (!window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches) return;
+  const root = document.documentElement;
+  if (root.classList.contains('has-custom-cursor')) return;
+
   const m = document.createElement('div');
-  m.className = 'cursor-mate'; m.setAttribute('aria-hidden', 'true');
+  m.className = 'cursor-mate';
+  m.setAttribute('aria-hidden', 'true');
   m.innerHTML = doodles.sparkle;
   document.body.appendChild(m);
-  // звёздочка стоит ровно в точке курсора (центр = острие), без отставания
+
+  // Скрываем системный курсор сразу, чтобы никогда не показывать две стрелки.
+  root.classList.add('has-custom-cursor');
+
   const moveCursor = e => {
     if (e.pointerType && e.pointerType !== 'mouse') return;
-    m.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-    if (!m.classList.contains('is-live')) {
-      m.classList.add('is-live');
-      document.documentElement.classList.add('has-custom-cursor');
-    }
+    // Прямые координаты исключают смещение из-за transform/контекста позиционирования.
+    m.style.left = e.clientX + 'px';
+    m.style.top = e.clientY + 'px';
+    m.classList.add('is-live');
   };
-  // Pointer Events — основной путь; mousemove оставлен как fallback для старых браузеров.
   if ('PointerEvent' in window) addEventListener('pointermove', moveCursor, { passive: true });
   else addEventListener('mousemove', moveCursor, { passive: true });
-  document.documentElement.addEventListener('pointerleave', () => m.classList.remove('is-live'));
-  document.documentElement.addEventListener('pointerenter', () => { if (document.documentElement.classList.contains('has-custom-cursor')) m.classList.add('is-live'); });
+
+  root.addEventListener('pointerleave', () => m.classList.remove('is-live'));
+  root.addEventListener('pointerenter', () => m.classList.add('is-live'));
+
   document.addEventListener('pointerover', e => {
-    m.classList.toggle('is-hot', !!e.target.closest('a, button, [role="button"], input, label'));
-    m.classList.toggle('is-light', !!e.target.closest('.on-dark, .is-dark, .case__backdrop'));
+    const target = e.target instanceof Element ? e.target : null;
+    m.classList.toggle('is-hot', !!target?.closest('a, button, [role="button"], input, label'));
+    m.classList.toggle('is-light', !!target?.closest('.on-dark, .is-dark, .case__backdrop'));
   });
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' || !e.pointerType) m.classList.add('is-pressed');
+  });
+  const release = () => m.classList.remove('is-pressed');
+  document.addEventListener('pointerup', release);
+  document.addEventListener('pointercancel', release);
+  addEventListener('blur', release);
 }
 
 /* ---------- 4. Переходы между страницами ART / DESIGN ---------- */
