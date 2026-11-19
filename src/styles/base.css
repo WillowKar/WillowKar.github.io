@@ -172,7 +172,7 @@ html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; }
 .cursor-mate.is-live { opacity: 1; }
 .cursor-mate.is-hot svg { color: var(--orange); transform: scale(1.48) rotate(45deg); }
 .cursor-mate svg { transition: transform .28s cubic-bezier(.2,.8,.2,1), color .22s ease; filter: drop-shadow(0 2px 5px rgba(25,35,30,.16)); }
-@media (hover: hover) and (pointer: fine) { html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; } }
+@media (any-hover: hover) and (any-pointer: fine) { html.has-custom-cursor, html.has-custom-cursor * { cursor: none !important; } }
 .cursor-mate.is-light svg { color: var(--white); }
 .cursor-mate.is-light.is-hot svg { color: var(--orange); }
 
@@ -315,5 +315,6 @@ body.mood-design { background-color: #d9dbda; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important; }
   .reveal, .dc[data-anim] { opacity: var(--op, 1) !important; transform: rotate(var(--rot, 0deg)) !important; }
-  .cursor-mate, .mood { display: none !important; }
+  /* Уменьшение движения отключает анимации, но не сам указатель мыши. */
+  .mood { display: none !important; }
 }

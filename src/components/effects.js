@@ -42,17 +42,24 @@ export const initReveal = (root = document) => observeIn(root.querySelectorAll('
 
 /* ---------- 3. Курсор: звёздочка полностью заменяет системную стрелку ---------- */
 export function initCursor() {
-  if (isTouch() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  // any-pointer учитывает гибридные ноутбуки: тачскрин не должен отключать мышь.
+  if (!window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches) return;
   const m = document.createElement('div');
   m.className = 'cursor-mate'; m.setAttribute('aria-hidden', 'true');
   m.innerHTML = doodles.sparkle;
   document.body.appendChild(m);
   // звёздочка стоит ровно в точке курсора (центр = острие), без отставания
-  addEventListener('pointermove', e => {
+  const moveCursor = e => {
     if (e.pointerType && e.pointerType !== 'mouse') return;
     m.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-    if (!m.classList.contains('is-live')) { m.classList.add('is-live'); document.documentElement.classList.add('has-custom-cursor'); }
-  }, { passive: true });
+    if (!m.classList.contains('is-live')) {
+      m.classList.add('is-live');
+      document.documentElement.classList.add('has-custom-cursor');
+    }
+  };
+  // Pointer Events — основной путь; mousemove оставлен как fallback для старых браузеров.
+  if ('PointerEvent' in window) addEventListener('pointermove', moveCursor, { passive: true });
+  else addEventListener('mousemove', moveCursor, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => m.classList.remove('is-live'));
   document.documentElement.addEventListener('pointerenter', () => { if (document.documentElement.classList.contains('has-custom-cursor')) m.classList.add('is-live'); });
   document.addEventListener('pointerover', e => {
