@@ -51,16 +51,19 @@ export function initCursor() {
   m.className = 'cursor-mate';
   m.setAttribute('aria-hidden', 'true');
   m.innerHTML = doodles.sparkle;
-  document.body.appendChild(m);
 
-  // Скрываем системный курсор сразу, чтобы никогда не показывать две стрелки.
+  // Помещаем курсор непосредственно в корень документа: так на него
+  // не влияют transform/overflow и stacking context элементов body.
+  root.appendChild(m);
+
+  // Скрываем системный курсор до первого движения мыши.
   root.classList.add('has-custom-cursor');
 
   const moveCursor = e => {
     if (e.pointerType && e.pointerType !== 'mouse') return;
-    // Прямые координаты исключают смещение из-за transform/контекста позиционирования.
-    m.style.left = e.clientX + 'px';
-    m.style.top = e.clientY + 'px';
+    // clientX/clientY и fixed-позиционирование используют одну систему координат.
+    // Сам слой переносится transform, SVG остаётся центрирован на точке указателя.
+    m.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
     m.classList.add('is-live');
   };
   if ('PointerEvent' in window) addEventListener('pointermove', moveCursor, { passive: true });
