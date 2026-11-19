@@ -40,13 +40,12 @@ export function observeIn(nodes, threshold = 0.15, cls = 'is-in') {
 }
 export const initReveal = (root = document) => observeIn(root.querySelectorAll('.reveal'));
 
-/* ---------- 3. Курсор: звёздочка полностью заменяет системную стрелку ---------- */
+/* ---------- 3. Курсор: физически следящая звезда с контрастным halo ---------- */
 export function initCursor() {
-  // Поддерживаем обычную мышь и мышь на гибридных ноутбуках.
-  const hasFinePointer =
-    window.matchMedia('(hover: hover) and (pointer: fine)').matches ||
-    window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches;
-  if (!hasFinePointer || !document.body) return;
+  // Не трогаем системный курсор, пока не убедились, что кастомный слой установлен.
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const anyFinePointer = window.matchMedia('(any-hover: hover) and (any-pointer: fine)');
+  if ((!finePointer.matches && !anyFinePointer.matches) || !document.body) return;
 
   const root = document.documentElement;
   if (root.classList.contains('has-custom-cursor')) return;
@@ -54,47 +53,126 @@ export function initCursor() {
   const cursor = document.createElement('div');
   cursor.className = 'cursor-mate';
   cursor.setAttribute('aria-hidden', 'true');
-  cursor.innerHTML = doodles.sparkle;
+  cursor.innerHTML = `<span class="cursor-mate__halo"></span><span class="cursor-mate__spark">${doodles.sparkle}</span>`;
   document.body.appendChild(cursor);
 
-  const moveCursor = event => {
-    if (event.pointerType && event.pointerType !== 'mouse') return;
+  // Координаты цели и визуального объекта разделены: лёгкая инерция делает движение живым.
+  let targetX = window.innerWidth / 2;
+  let targetY = window.innerHeight / 2;
+  let currentX = targetX;
+  let currentY = targetY;
+  let velocityX = 0;
+  let velocityY = 0;
+  let frame = 0;
+  let active = false;
+  let pointerInside = false;
 
-    // Контейнер 22×22 px центрируется точно на координатах указателя.
-    cursor.style.left = `${event.clientX - 11}px`;
-    cursor.style.top = `${event.clientY - 11}px`;
-    cursor.classList.add('is-live');
+  const setPosition = () => {
+    cursor.style.setProperty('--cursor-x', `${currentX}px`);
+    cursor.style.setProperty('--cursor-y', `${currentY}px`);
   };
 
-  // Устанавливаем скрытие системной стрелки только после создания overlay.
-  root.classList.add('has-custom-cursor');
+  const animate = () => {
+    frame = 0;
+    if (!active) return;
 
-  if ('PointerEvent' in window) {
-    window.addEventListener('pointermove', moveCursor, { passive: true });
-  } else {
-    window.addEventListener('mousemove', moveCursor, { passive: true });
-  }
+    // Критическое демпфирование: мягкое догоняющее движение без бесконечной раскачки.
+    const dx = targetX - currentX;
+    const dy = targetY - currentY;
+    velocityX = (velocityX + dx * 0.19) * 0.68;
+    velocityY = (velocityY + dy * 0.19) * 0.68;
+    currentX += velocityX;
+    currentY += velocityY;
 
-  document.addEventListener('pointerover', event => {
+    const speed = Math.min(1, Math.hypot(velocityX, velocityY) / 24);
+    cursor.style.setProperty('--cursor-speed', speed.toFixed(3));
+    cursor.style.setProperty('--cursor-angle', `${Math.atan2(velocityY, velocityX) * 180 / Math.PI}deg`);
+    setPosition();
+
+    if (Math.abs(dx) + Math.abs(dy) + Math.abs(velocityX) + Math.abs(velocityY) > 0.08) {
+      frame = requestAnimationFrame(animate);
+    } else {
+      currentX = targetX;
+      currentY = targetY;
+      velocityX = velocityY = 0;
+      setPosition();
+    }
+  };
+
+  const wake = () => {
+    if (!frame && active) frame = requestAnimationFrame(animate);
+  };
+
+  const updatePointer = event => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    targetX = event.clientX;
+    targetY = event.clientY;
+    pointerInside = true;
+    if (!active) {
+      active = true;
+      currentX = targetX;
+      currentY = targetY;
+      cursor.classList.add('is-live');
+      root.classList.add('has-custom-cursor');
+      setPosition();
+    }
+    wake();
+  };
+
+  const isDarkSurface = element => {
+    if (!(element instanceof Element)) return false;
+    // Явная разметка + проверка вычисленного фона позволяют работать и с тёмными карточками,
+    // и с тёмными секциями без ручного добавления класса каждому вложенному элементу.
+    const dark = element.closest('.on-dark, .is-dark, .case__backdrop, [data-cursor-contrast="dark"]');
+    if (dark) return true;
+    const surface = element.closest('a, button, [role="button"], section, article, header, footer, .album, .case');
+    if (!surface) return false;
+    const color = getComputedStyle(surface).backgroundColor;
+    const match = color.match(/rgba?\((\d+)[, ]+\s*(\d+)[, ]+\s*(\d+)/i);
+    if (!match || (color.startsWith('rgba') && Number(color.match(/[, ]([\d.]+)\)$/)?.[1] || 0) < 0.12)) return false;
+    const [r, g, b] = match.slice(1).map(Number);
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 105;
+  };
+
+  const updateTargetState = event => {
     const target = event.target instanceof Element ? event.target : null;
-    cursor.classList.toggle('is-hot', !!target?.closest('a, button, [role="button"], input, label'));
-    cursor.classList.toggle('is-light', !!target?.closest('.on-dark, .is-dark, .case__backdrop'));
-  });
+    const interactive = !!target?.closest('a, button, [role="button"], input, select, textarea, label, summary, [data-cursor-hot]');
+    cursor.classList.toggle('is-hot', interactive);
+    cursor.classList.toggle('is-light', isDarkSurface(target));
+  };
 
+  const setPressed = pressed => cursor.classList.toggle('is-pressed', pressed);
+
+  // Все слушатели passive: курсор никогда не блокирует прокрутку или клики.
+  window.addEventListener('pointermove', updatePointer, { passive: true });
+  document.addEventListener('pointerover', updateTargetState, { passive: true });
   document.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'mouse' || !event.pointerType) cursor.classList.add('is-pressed');
-  });
+    if (event.pointerType === 'mouse' || !event.pointerType) setPressed(true);
+  }, { passive: true });
+  document.addEventListener('pointerup', () => setPressed(false), { passive: true });
+  document.addEventListener('pointercancel', () => setPressed(false), { passive: true });
+  document.addEventListener('mouseover', updateTargetState, { passive: true });
 
-  const release = () => cursor.classList.remove('is-pressed');
-  document.addEventListener('pointerup', release);
-  document.addEventListener('pointercancel', release);
-  window.addEventListener('blur', () => {
-    release();
+  const hide = () => {
+    pointerInside = false;
+    setPressed(false);
     cursor.classList.remove('is-live');
+    // Системную стрелку возвращаем сразу при потере фокуса/указателя — не оставляем пустой экран.
+    root.classList.remove('has-custom-cursor');
+    active = false;
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+  };
+  document.addEventListener('mouseleave', hide);
+  window.addEventListener('blur', hide);
+  window.addEventListener('focus', () => {
+    cursor.classList.remove('is-live');
+    root.classList.remove('has-custom-cursor');
+    active = false;
+    pointerInside = false;
   });
-  window.addEventListener('focus', () => cursor.classList.remove('is-live'));
+  window.addEventListener('pagehide', hide);
 }
-
 /* ---------- 4. Переходы между страницами ART / DESIGN ---------- */
 function transitionEl(kind) {
   let pt = document.querySelector('.pt');
