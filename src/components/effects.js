@@ -53,7 +53,7 @@ export function initCursor() {
   const cursor = document.createElement('div');
   cursor.className = 'cursor-mate';
   cursor.setAttribute('aria-hidden', 'true');
-  cursor.innerHTML = `<span class="cursor-mate__halo"></span><span class="cursor-mate__spark">${doodles.sparkle}</span>`;
+  cursor.innerHTML = `<span class="cursor-mate__spark">${doodles.sparkle}</span>`;
   document.body.appendChild(cursor);
 
   // Координаты цели и визуального объекта разделены: лёгкая инерция делает движение живым.
@@ -61,8 +61,6 @@ export function initCursor() {
   let targetY = window.innerHeight / 2;
   let currentX = targetX;
   let currentY = targetY;
-  let velocityX = 0;
-  let velocityY = 0;
   let frame = 0;
   let active = false;
   let pointerInside = false;
@@ -76,25 +74,18 @@ export function initCursor() {
     frame = 0;
     if (!active) return;
 
-    // Критическое демпфирование: мягкое догоняющее движение без бесконечной раскачки.
+    // Плавное экспоненциальное сглаживание без пружинных колебаний на микродвижениях.
     const dx = targetX - currentX;
     const dy = targetY - currentY;
-    velocityX = (velocityX + dx * 0.19) * 0.68;
-    velocityY = (velocityY + dy * 0.19) * 0.68;
-    currentX += velocityX;
-    currentY += velocityY;
-
-    const speed = Math.min(1, Math.hypot(velocityX, velocityY) / 24);
-    cursor.style.setProperty('--cursor-speed', speed.toFixed(3));
-    cursor.style.setProperty('--cursor-angle', `${Math.atan2(velocityY, velocityX) * 180 / Math.PI}deg`);
+    currentX += dx * 0.14;
+    currentY += dy * 0.14;
     setPosition();
 
-    if (Math.abs(dx) + Math.abs(dy) + Math.abs(velocityX) + Math.abs(velocityY) > 0.08) {
+    if (Math.abs(dx) + Math.abs(dy) > 0.12) {
       frame = requestAnimationFrame(animate);
     } else {
       currentX = targetX;
       currentY = targetY;
-      velocityX = velocityY = 0;
       setPosition();
     }
   };
