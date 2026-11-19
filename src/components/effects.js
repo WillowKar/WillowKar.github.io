@@ -42,7 +42,7 @@ export const initReveal = (root = document) => observeIn(root.querySelectorAll('
 
 /* ---------- 3. Курсор: звёздочка полностью заменяет системную стрелку ---------- */
 export function initCursor() {
-  if (isTouch() || reduceMotion()) return;
+  if (isTouch() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   const m = document.createElement('div');
   m.className = 'cursor-mate'; m.setAttribute('aria-hidden', 'true');
   m.innerHTML = doodles.sparkle;

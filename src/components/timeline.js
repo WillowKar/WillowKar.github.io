@@ -26,7 +26,7 @@ export function initTimeline(root) {
   const stem = root.querySelector('.branch__stem');
   const leavesG = root.querySelector('.branch__leaves');
   const items = [...root.querySelectorAll('.branch__item')];
-  let len = 0, nodes = [], maxP = 0;
+  let len = 0, nodes = [], maxP = 0, hasEntered = false;
 
   function layout() {
     const vertical = isMobile();
@@ -92,7 +92,9 @@ export function initTimeline(root) {
     let p = (innerHeight * .85 - r.top) / (r.height + innerHeight * .25);
     p = Math.max(0, Math.min(1, p));
     if (reduceMotion()) p = 1;
+    if (p > 0) hasEntered = true;
     maxP = Math.max(maxP, p); p = maxP;          // ветка только растёт, не «сворачивается» обратно
+    root.classList.toggle('has-started', hasEntered);
     stem.style.strokeDashoffset = (len * (1 - p)).toFixed(1);
     items.forEach((li, i) => {
       const on = p >= Number(li.dataset.at) - 0.02;

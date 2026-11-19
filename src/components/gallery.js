@@ -28,7 +28,13 @@ function designSlides(p) {
     };
   });
 }
-const artSlides = (p) => [p.image, ...(p.gallery || [])].filter(Boolean).map(src => ({ src }));
+// Resolve short filenames inside the artwork's own folder. Absolute paths and URLs remain untouched.
+function artAsset(p, value) {
+  if (!value) return '';
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith('/')) return value;
+  return `/src/assets/art/${p.slug}/${value.includes('.') ? value : value + '.webp'}`;
+}
+const artSlides = (p) => [p.image, ...(p.gallery || [])].filter(Boolean).map(src => ({ src: artAsset(p, src) }));
 
 /* ---------- карточки ---------- */
 function designCard(p, i) {
@@ -62,7 +68,7 @@ function artCard(p, i) {
   }
   return `<li class="gcell gcell--${p.format || 'square'} reveal" style="--rd:${(i % 3) * 80}ms">
     <a class="card card--art" href="/art/${esc(p.slug)}" data-slug="${esc(p.slug)}">
-      <figure class="card__media"><img src="${esc(p.image)}" loading="lazy" alt="${esc(p.imageAlt || p.title)}"></figure>
+      <figure class="card__media"><img src="${esc(artAsset(p, p.image))}" loading="lazy" alt="${esc(p.imageAlt || p.title)}"></figure>
       <div class="card__body">
         <h2 class="card__title">${esc(p.title)}</h2>
         <p class="card__short t-caption">${esc([p.category, p.year].filter(Boolean).join(' / '))}</p>

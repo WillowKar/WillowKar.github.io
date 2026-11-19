@@ -267,3 +267,8 @@
   .prog__num b { font-size: 22px; }
   .prog__name { overflow-wrap: anywhere; }
 }
+
+/* Career branch markers remain hidden until the timeline enters the scroll sequence. */
+.branch__bud, .branch__cluster { opacity: 0; }
+.branch__item.is-on .branch__bud { opacity: 1; }
+.branch.has-started .branch__cluster.is-on { opacity: .95; }
