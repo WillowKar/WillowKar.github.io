@@ -42,48 +42,57 @@ export const initReveal = (root = document) => observeIn(root.querySelectorAll('
 
 /* ---------- 3. Курсор: звёздочка полностью заменяет системную стрелку ---------- */
 export function initCursor() {
-  // any-pointer учитывает мышь на гибридных ноутбуках с сенсорным экраном.
-  if (!window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches) return;
+  // Поддерживаем обычную мышь и мышь на гибридных ноутбуках.
+  const hasFinePointer =
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches ||
+    window.matchMedia('(any-hover: hover) and (any-pointer: fine)').matches;
+  if (!hasFinePointer || !document.body) return;
+
   const root = document.documentElement;
   if (root.classList.contains('has-custom-cursor')) return;
 
-  const m = document.createElement('div');
-  m.className = 'cursor-mate';
-  m.setAttribute('aria-hidden', 'true');
-  m.innerHTML = doodles.sparkle;
+  const cursor = document.createElement('div');
+  cursor.className = 'cursor-mate';
+  cursor.setAttribute('aria-hidden', 'true');
+  cursor.innerHTML = doodles.sparkle;
+  document.body.appendChild(cursor);
 
-  // Помещаем курсор непосредственно в корень документа: так на него
-  // не влияют transform/overflow и stacking context элементов body.
-  root.appendChild(m);
+  const moveCursor = event => {
+    if (event.pointerType && event.pointerType !== 'mouse') return;
 
-  // Скрываем системный курсор до первого движения мыши.
+    // Контейнер 22×22 px центрируется точно на координатах указателя.
+    cursor.style.left = `${event.clientX - 11}px`;
+    cursor.style.top = `${event.clientY - 11}px`;
+    cursor.classList.add('is-live');
+  };
+
+  // Устанавливаем скрытие системной стрелки только после создания overlay.
   root.classList.add('has-custom-cursor');
 
-  const moveCursor = e => {
-    if (e.pointerType && e.pointerType !== 'mouse') return;
-    // clientX/clientY и fixed-позиционирование используют одну систему координат.
-    // Сам слой переносится transform, SVG остаётся центрирован на точке указателя.
-    m.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-    m.classList.add('is-live');
-  };
-  if ('PointerEvent' in window) addEventListener('pointermove', moveCursor, { passive: true });
-  else addEventListener('mousemove', moveCursor, { passive: true });
+  if ('PointerEvent' in window) {
+    window.addEventListener('pointermove', moveCursor, { passive: true });
+  } else {
+    window.addEventListener('mousemove', moveCursor, { passive: true });
+  }
 
-  root.addEventListener('pointerleave', () => m.classList.remove('is-live'));
-  root.addEventListener('pointerenter', () => m.classList.add('is-live'));
+  document.addEventListener('pointerover', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    cursor.classList.toggle('is-hot', !!target?.closest('a, button, [role="button"], input, label'));
+    cursor.classList.toggle('is-light', !!target?.closest('.on-dark, .is-dark, .case__backdrop'));
+  });
 
-  document.addEventListener('pointerover', e => {
-    const target = e.target instanceof Element ? e.target : null;
-    m.classList.toggle('is-hot', !!target?.closest('a, button, [role="button"], input, label'));
-    m.classList.toggle('is-light', !!target?.closest('.on-dark, .is-dark, .case__backdrop'));
+  document.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' || !event.pointerType) cursor.classList.add('is-pressed');
   });
-  document.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse' || !e.pointerType) m.classList.add('is-pressed');
-  });
-  const release = () => m.classList.remove('is-pressed');
+
+  const release = () => cursor.classList.remove('is-pressed');
   document.addEventListener('pointerup', release);
   document.addEventListener('pointercancel', release);
-  addEventListener('blur', release);
+  window.addEventListener('blur', () => {
+    release();
+    cursor.classList.remove('is-live');
+  });
+  window.addEventListener('focus', () => cursor.classList.remove('is-live'));
 }
 
 /* ---------- 4. Переходы между страницами ART / DESIGN ---------- */
