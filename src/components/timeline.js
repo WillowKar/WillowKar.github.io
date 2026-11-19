@@ -91,13 +91,13 @@ export function initTimeline(root) {
     // прогресс: начинаем, когда верх блока на 85% экрана; заканчиваем, когда низ на 60%
     let p = (innerHeight * .85 - r.top) / (r.height + innerHeight * .25);
     p = Math.max(0, Math.min(1, p));
-    if (reduceMotion()) p = 1;
+    if (reduceMotion()) p = 0;
     if (p > 0) hasEntered = true;
     maxP = Math.max(maxP, p); p = maxP;          // ветка только растёт, не «сворачивается» обратно
     root.classList.toggle('has-started', hasEntered);
     stem.style.strokeDashoffset = (len * (1 - p)).toFixed(1);
     items.forEach((li, i) => {
-      const on = p >= Number(li.dataset.at) - 0.02;
+      const on = hasEntered && p >= Number(li.dataset.at) - 0.02;
       li.classList.toggle('is-on', on);
       leavesG.children[i]?.classList.toggle('is-on', on);
     });
